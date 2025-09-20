@@ -64,18 +64,18 @@ runs:
         comment-author: "github-actions[bot]"
         body-includes: "Pgrubic Lint Report"
 
-    # - name: Check if lint report exists
-    #   id: lint-report
-    #   run: |
-    #     if [ -f pgrubic-lint-report.md ]; then
-    #       echo "exists=true" >> $GITHUB_OUTPUT
-    #     else
-    #       echo "exists=false" >> $GITHUB_OUTPUT
-    #     fi
-    #   shell: bash
+    - name: Check if lint report exists
+      id: lint-report
+      run: |
+        if [ -f pgrubic-lint-report.md ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
 
     - name: Create or update comment
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && steps.lint-report.outputs.exists == 'true'
       uses: peter-evans/create-or-update-comment@v4
       with:
         comment-id: ${{ steps.fc.outputs.comment-id }}
