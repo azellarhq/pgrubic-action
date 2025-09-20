@@ -12,6 +12,7 @@ on:  # yamllint disable-line rule:truthy
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   pgrubic_action:
