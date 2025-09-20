@@ -9,7 +9,7 @@ inputs:
   args:
     description: "Arguments passed to pgrubic. Use `pgrubic --help` to see available options. Defaults to `lint`."
     required: false
-    default: "lint --generate-lint-report"
+    default: "lint"
   src:
     description: "Source to run pgrubic on. Defaults to the current directory."
     required: false
@@ -17,7 +17,7 @@ inputs:
   pgrubic-version:
     description: "The version of pgrubic to use, e.g., `0.6.0` Defaults 'latest'."
     required: false
-    default: "0.8.0"
+    default: "latest"
 outputs:
   installed-pgrubic-version:
     description: "The installed pgrubic version. Useful when using latest."
