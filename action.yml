@@ -17,7 +17,7 @@ inputs:
   pgrubic-version:
     description: "The version of pgrubic to use, e.g., `0.6.0` Defaults 'latest'."
     required: false
-    default: "latest"
+    default: "0.8.0"
 outputs:
   installed-pgrubic-version:
     description: "The installed pgrubic version. Useful when using latest."
@@ -63,6 +63,16 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         comment-author: "github-actions[bot]"
         body-includes: "Pgrubic Lint Report"
+
+    # - name: Check if lint report exists
+    #   id: lint-report
+    #   run: |
+    #     if [ -f pgrubic-lint-report.md ]; then
+    #       echo "exists=true" >> $GITHUB_OUTPUT
+    #     else
+    #       echo "exists=false" >> $GITHUB_OUTPUT
+    #     fi
+    #   shell: bash
 
     - name: Create or update comment
       if: github.event_name == 'pull_request'
