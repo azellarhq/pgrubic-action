@@ -9,7 +9,7 @@ inputs:
   args:
     description: "Arguments passed to pgrubic. Use `pgrubic --help` to see available options. Defaults to `lint`."
     required: false
-    default: "lint"
+    default: "lint --generate-lint-report"
   src:
     description: "Source to run pgrubic on. Defaults to the current directory."
     required: false
@@ -30,23 +30,55 @@ runs:
       uses: actions/setup-python@v5
       with:
         python-version: "3.12"
+
     - name: Install pgrubic {{ inputs.pgrubic-version }}
       if: ${{ inputs.pgrubic-version == 'latest' }}
       run: pip install --upgrade pip pgrubic
       shell: bash
+
     - name: Install pgrubic {{ inputs.pgrubic-version }}
       if: ${{ inputs.pgrubic-version != 'latest' }}
       env:
         PGRUBIC_VERSION: ${{ inputs.pgrubic-version }}
       run: pip install --upgrade pip pgrubic==$PGRUBIC_VERSION
       shell: bash
+
     - name: Output installed pgrubic version
       id: installed-pgrubic-version
       run: echo "installed-pgrubic-version=$(pgrubic --version)" >> $GITHUB_OUTPUT
       shell: bash
+
     - name: Run pgrubic
       env:
         PGRUBIC_ARGS: ${{ inputs.args }}
         PGRUBIC_SRC: ${{ inputs.src }}
       run: pgrubic $PGRUBIC_ARGS $PGRUBIC_SRC
       shell: bash
+
+    - name: Find Comment
+      if: github.event_name == 'pull_request'
+      uses: peter-evans/find-comment@v3
+      id: fc
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: "github-actions[bot]"
+        body-includes: "Pgrubic Lint Report"
+
+    - name: Check if lint report exists
+      id: lint-report
+      run: |
+        if [ -f pgrubic-lint-report.md ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+
+    - name: Create or update comment
+      if: github.event_name == 'pull_request' && steps.lint-report.outputs.exists == 'true'
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.fc.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body-path: "pgrubic-lint-report.md"
+        edit-mode: replace
