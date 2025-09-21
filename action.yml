@@ -49,11 +49,13 @@ runs:
       shell: bash
 
     - name: Run pgrubic
+      id: run-pgrubic
       env:
         PGRUBIC_ARGS: ${{ inputs.args }}
         PGRUBIC_SRC: ${{ inputs.src }}
       run: pgrubic $PGRUBIC_ARGS $PGRUBIC_SRC
       shell: bash
+      continue-on-error: true
 
     - name: Find Comment
       if: github.event_name == 'pull_request'
@@ -82,3 +84,9 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         body-path: "pgrubic-lint-report.md"
         edit-mode: replace
+
+    - name: Exit pipeline on pgrubic failure
+      if: steps.run-pgrubic.outcome  == 'failure'
+      run: |
+        exit 1
+      shell: bash
