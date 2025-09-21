@@ -1,3 +1,3 @@
-SELECT *
+SELECT col1
   FROM public.t1
- WHERE 12 = d1;
+ WHERE d1 = 12;
