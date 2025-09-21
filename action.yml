@@ -86,7 +86,7 @@ runs:
         edit-mode: replace
 
     - name: Exit pipeline on pgrubic failure
-      if: steps.run-pgrubic.outcome  == 'failure'
+      if: steps.run-pgrubic.outcome == 'failure'
       run: |
         exit 1
       shell: bash
