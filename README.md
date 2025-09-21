@@ -8,15 +8,26 @@
 
 A GitHub Action to run [**pgrubic**](https://bolajiwahab.github.io/pgrubic), a PostgreSQL linter and formatter for schema migrations and design best practices.
 
-This action runs `pgrubic lint` by default, but it can do
+This action runs `pgrubic lint --generate-lint-report` by default, but it can do
 anything `pgrubic` can.
+
+## Commenting on pull requests
+
+This action, by default, comments with lint reports on pull requests on `pull_request` events and therefore requires the necessary permissions for publishing new comments in pull requests.
+
+```yaml
+permissions:
+  # Gives the action the necessary permissions for publishing new
+  # comments in pull requests.
+  pull-requests: write
+```
 
 ## Inputs
 
 | Input             | Description                                                                                                            | Default            |
 |-------------------|------------------------------------------------------------------------------------------------------------------------|--------------------|
-| `args`            | The arguments to pass to the **pgrubic** command. See [Running pgrubic](https://bolajiwahab.github.io/pgrubic/cli).    | `lint`             |
-| `pgrubic-version` | The version of **pgrubic** to use, e.g., `0.6.0`.                                                                      | `latest`           |
+| `args`            | The arguments to pass to the **pgrubic** command. See [Running pgrubic](https://bolajiwahab.github.io/pgrubic/cli).    | `lint --generate-lint-report`             |
+| `pgrubic-version` | The version of **pgrubic** to use, e.g., `0.9.0`.                                                                      | `latest`           |
 | `src`             | The directory or files to run **pgrubic** on.                                                                          | [github.workspace](https://docs.github.com/en/actions/reference/contexts-reference#github-context:~:text=the%20workflow%20file.-,github.workspace,-string)                                 |
 
 ## Outputs
@@ -30,13 +41,13 @@ anything `pgrubic` can.
 ### Basic
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v1
+- uses: azellarhq/pgrubic-action@v2
 ```
 
 ### Specifying a different source directory
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v1
+- uses: azellarhq/pgrubic-action@v2
   with:
     src: "./src"
 ```
@@ -44,7 +55,7 @@ anything `pgrubic` can.
 ### Specifying multiple files
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v1
+- uses: azellarhq/pgrubic-action@v2
   with:
     src: >-
       path/to/file1.sql
@@ -54,7 +65,7 @@ anything `pgrubic` can.
 ### Specifying multiple directories
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v1
+- uses: azellarhq/pgrubic-action@v2
   with:
     src: >-
       path/to/dir1
@@ -64,7 +75,7 @@ anything `pgrubic` can.
 ### Specifying multiple files and directories
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v1
+- uses: azellarhq/pgrubic-action@v2
   with:
     src: >-
       path/to/file1.sql
@@ -78,7 +89,7 @@ anything `pgrubic` can.
 This action adds **pgrubic** to the PATH, so you can use it in subsequent steps.
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v1
+- uses: azellarhq/pgrubic-action@v2
 - run: pgrubic lint
 - run: pgrubic format
 ```
@@ -88,7 +99,7 @@ you can use the `args` input to overwrite the default option (`lint`):
 
 ```yaml
 - name: Install pgrubic without running lint or format
-  uses: azellarhq/pgrubic-action@v1
+  uses: azellarhq/pgrubic-action@v2
   with:
     args: "--version"
 ```
@@ -96,7 +107,7 @@ you can use the `args` input to overwrite the default option (`lint`):
 ### Use `pgrubic format`
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v1
+- uses: azellarhq/pgrubic-action@v2
   with:
     args: "format --check --diff"
 ```
@@ -104,7 +115,7 @@ you can use the `args` input to overwrite the default option (`lint`):
 ### Install a specific version of pgrubic
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v1
+- uses: azellarhq/pgrubic-action@v2
   with:
     pgrubic-version: "0.6.0"
 ```
@@ -112,7 +123,7 @@ you can use the `args` input to overwrite the default option (`lint`):
 ### Install the latest version of pgrubic
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v1
+- uses: azellarhq/pgrubic-action@v2
   with:
     pgrubic-version: "latest"
 ```
