@@ -20,8 +20,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+
       - name: Self test action
         id: action
         uses: ./
+        with:
+          src: "tests/sql"
+
       - name: Output installed pgrubic version
         run: echo ${{ steps.action.outputs.installed-pgrubic-version }}
