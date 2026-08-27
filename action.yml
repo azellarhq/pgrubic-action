@@ -132,8 +132,10 @@ runs:
         PGRUBIC_CACHE_PATH: ${{ inputs.src }}/${{ inputs.cache-path }}
       run: |
         if [ -d "$PGRUBIC_CACHE_PATH" ]; then
+            ls -la "$PGRUBIC_CACHE_PATH"
             echo "exists=true" >> "$GITHUB_OUTPUT"
         else
+            ls -la "$PGRUBIC_CACHE_PATH"
             echo "exists=false" >> "$GITHUB_OUTPUT"
         fi
       shell: bash
