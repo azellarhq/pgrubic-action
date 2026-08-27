@@ -129,7 +129,7 @@ runs:
       id: pgrubic-cache
       if: ${{ always() && inputs.cache == 'true' }}
       env:
-        PGRUBIC_CACHE_PATH: ${{ inputs.src }}/${{ inputs.cache-path }}
+        PGRUBIC_CACHE_PATH: ${{ github.workspace }}/${{ inputs.cache-path }}
       run: |
         if [ -d "$PGRUBIC_CACHE_PATH" ]; then
             ls -la "$PGRUBIC_CACHE_PATH"
