@@ -1,23 +1,39 @@
 ---
 # yamllint disable rule:line-length
 name: pgrubic-action
+
 description: "A GitHub Action to run pgrubic, a PostgreSQL linter and formatter for schema migrations and design best practices."
+
 branding:
   icon: "check"
   color: "purple"
+
 inputs:
   args:
-    description: "Arguments passed to pgrubic. Use `pgrubic --help` to see available options. Defaults to `lint`."
+    description: "Arguments passed to pgrubic. Use `pgrubic --help` to see available options. Defaults to `lint --generate-lint-report`."
     required: false
     default: "lint --generate-lint-report"
+
   src:
     description: "Source to run pgrubic on. Defaults to the current directory."
     required: false
     default: ${{ github.workspace }}
+
   pgrubic-version:
     description: "The version of pgrubic to use, e.g., `0.6.0` Defaults 'latest'."
     required: false
     default: "latest"
+
+  cache:
+    description: "Whether to persist the pgrubic cache between workflow runs."
+    required: false
+    default: "true"
+
+  cache-path:
+    description: "Path to the pgrubic cache directory, relative to the repository root."
+    required: false
+    default: ".pgrubic_cache"
+
 outputs:
   installed-pgrubic-version:
     description: "The installed pgrubic version. Useful when using latest."
@@ -27,39 +43,53 @@ runs:
   using: composite
   steps:
     - name: Set up Python
-      uses: actions/setup-python@v7
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
       with:
         python-version: "3.12"
 
-    - name: Install pgrubic {{ inputs.pgrubic-version }}
+    - name: Install latest pgrubic
       if: ${{ inputs.pgrubic-version == 'latest' }}
       run: pip install --upgrade pip pgrubic
       shell: bash
 
-    - name: Install pgrubic {{ inputs.pgrubic-version }}
+    - name: Install pgrubic ${{ inputs.pgrubic-version }}
       if: ${{ inputs.pgrubic-version != 'latest' }}
       env:
         PGRUBIC_VERSION: ${{ inputs.pgrubic-version }}
-      run: pip install --upgrade pip pgrubic==$PGRUBIC_VERSION
+      run: pip install --upgrade pip "pgrubic==$PGRUBIC_VERSION"
       shell: bash
 
     - name: Output installed pgrubic version
       id: installed-pgrubic-version
-      run: echo "installed-pgrubic-version=$(pgrubic --version)" >> $GITHUB_OUTPUT
+      run: |
+        echo "installed-pgrubic-version=$(pgrubic --version)" >> "$GITHUB_OUTPUT"
       shell: bash
+
+    - name: Restore pgrubic cache
+      if: ${{ inputs.cache == 'true' }}
+      id: pgrubic-cache-restore
+      uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
+      with:
+        path: ${{ github.workspace }}/${{ inputs.cache-path }}
+        key: >-
+          ${{ runner.os }}-pgrubic-${{
+          steps.installed-pgrubic-version.outputs.installed-pgrubic-version
+          }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          ${{ runner.os }}-pgrubic-${{ steps.installed-pgrubic-version.outputs.installed-pgrubic-version }}-
 
     - name: Run pgrubic
       id: run-pgrubic
       env:
         PGRUBIC_ARGS: ${{ inputs.args }}
         PGRUBIC_SRC: ${{ inputs.src }}
-      run: pgrubic $PGRUBIC_ARGS $PGRUBIC_SRC
+      run: pgrubic $PGRUBIC_ARGS "$PGRUBIC_SRC"
       shell: bash
       continue-on-error: true
 
     - name: Find Comment
       if: github.event_name == 'pull_request'
-      uses: peter-evans/find-comment@v4
+      uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad  # v4.0.0
       id: fc
       with:
         issue-number: ${{ github.event.pull_request.number }}
@@ -70,23 +100,31 @@ runs:
       id: lint-report
       run: |
         if [ -f pgrubic-lint-report.md ]; then
-          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "exists=true" >> "$GITHUB_OUTPUT"
         else
-          echo "exists=false" >> $GITHUB_OUTPUT
+          echo "exists=false" >> "$GITHUB_OUTPUT"
         fi
       shell: bash
 
     - name: Create or update comment
-      if: github.event_name == 'pull_request' && steps.lint-report.outputs.exists == 'true'
-      uses: peter-evans/create-or-update-comment@v5
+      if: >-
+        github.event_name == 'pull_request' &&
+        steps.lint-report.outputs.exists == 'true'
+      uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9  # v5.0.0
       with:
         comment-id: ${{ steps.fc.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body-path: "pgrubic-lint-report.md"
         edit-mode: replace
 
+    - name: Save pgrubic cache
+      if: ${{ always() && inputs.cache == 'true' }}
+      uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
+      with:
+        path: ${{ github.workspace }}/${{ inputs.cache-path }}
+        key: ${{ steps.pgrubic-cache-restore.outputs.cache-primary-key }}
+
     - name: Exit pipeline on pgrubic failure
       if: steps.run-pgrubic.outcome == 'failure'
-      run: |
-        exit 1
+      run: exit 1
       shell: bash
