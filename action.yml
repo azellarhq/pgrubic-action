@@ -12,7 +12,7 @@ inputs:
   args:
     description: "Arguments passed to pgrubic. Use `pgrubic --help` to see available options. Defaults to `lint --generate-lint-report`."
     required: false
-    default: "lint --generate-lint-report"
+    default: "format"
 
   src:
     description: "Source to run pgrubic on. Defaults to the current directory."
