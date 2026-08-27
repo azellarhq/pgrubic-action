@@ -39,6 +39,10 @@ outputs:
     description: "The installed pgrubic version. Useful when using latest."
     value: ${{ steps.installed-pgrubic-version.outputs.installed-pgrubic-version }}
 
+  installed-pgrubic-version-number:
+    description: "The installed pgrubic version number."
+    value: ${{ steps.installed-pgrubic-version.outputs.installed-pgrubic-version-number }}
+
 runs:
   using: composite
   steps:
@@ -62,7 +66,11 @@ runs:
     - name: Output installed pgrubic version
       id: installed-pgrubic-version
       run: |
-        echo "installed-pgrubic-version=$(pgrubic --version)" >> "$GITHUB_OUTPUT"
+        version_output="$(pgrubic --version)"
+        version_number="${version_output##*version }"
+
+        echo "installed-pgrubic-version=$version_output" >> "$GITHUB_OUTPUT"
+        echo "installed-pgrubic-version-number=$version_number" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Restore pgrubic cache
@@ -73,10 +81,10 @@ runs:
         path: ${{ github.workspace }}/${{ inputs.cache-path }}
         key: >-
           ${{ runner.os }}-pgrubic-${{
-          steps.installed-pgrubic-version.outputs.installed-pgrubic-version
+          steps.installed-pgrubic-version.outputs.installed-pgrubic-version-number
           }}-${{ github.run_id }}-${{ github.run_attempt }}
         restore-keys: |
-          ${{ runner.os }}-pgrubic-${{ steps.installed-pgrubic-version.outputs.installed-pgrubic-version }}-
+          ${{ runner.os }}-pgrubic-${{ steps.installed-pgrubic-version.outputs.installed-pgrubic-version-number }}-
 
     - name: Run pgrubic
       id: run-pgrubic
