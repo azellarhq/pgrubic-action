@@ -11,7 +11,7 @@ inputs:
     required: false
     default: "lint"
   src:
-    description: "Source to run pgrubic on. Defaults to the current directory."
+    description: "Sources to run pgrubic on, one path per line. Defaults to the current directory."
     required: false
     default: ${{ github.workspace }}
   pgrubic-version:
@@ -58,7 +58,12 @@ runs:
       env:
         PGRUBIC_ARGS: ${{ inputs.args }}
         PGRUBIC_SRC: ${{ inputs.src }}
-      run: pgrubic $PGRUBIC_ARGS $PGRUBIC_SRC
+      run: |
+        pgrubic_sources=()
+        while IFS= read -r source; do
+          [ -n "$source" ] && pgrubic_sources+=("$source")
+        done <<< "$PGRUBIC_SRC"
+        pgrubic $PGRUBIC_ARGS "${pgrubic_sources[@]}"
       shell: bash
       continue-on-error: true
 
