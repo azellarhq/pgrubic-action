@@ -31,12 +31,12 @@ runs:
       with:
         python-version: "3.12"
 
-    - name: Install pgrubic {{ inputs.pgrubic-version }}
+    - name: Install pgrubic ${{ inputs.pgrubic-version }}
       if: ${{ inputs.pgrubic-version == 'latest' }}
       run: pip install --upgrade pip pgrubic
       shell: bash
 
-    - name: Install pgrubic {{ inputs.pgrubic-version }}
+    - name: Install pgrubic ${{ inputs.pgrubic-version }}
       if: ${{ inputs.pgrubic-version != 'latest' }}
       env:
         PGRUBIC_VERSION: ${{ inputs.pgrubic-version }}
