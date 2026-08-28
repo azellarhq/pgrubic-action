@@ -21,13 +21,16 @@ permissions:
   pull-requests: write
 
 steps:
-  - uses: azellarhq/pgrubic-action@v2
+  - uses: azellarhq/pgrubic-action@v3
     with:
       args: "lint --generate-lint-report"
 ```
 
-Pull requests from forks and Dependabot may receive a read-only `GITHUB_TOKEN`,
-in which case the action cannot publish a comment.
+The action skips commenting with a warning for
+[pull requests from forks](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#changing-the-permissions-in-a-forked-repository),
+which typically receive a read-only `GITHUB_TOKEN`, and
+[Dependabot pull requests](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-on-actions),
+whose workflows receive a read-only `GITHUB_TOKEN` by default.
 
 ## Inputs
 
@@ -48,13 +51,13 @@ in which case the action cannot publish a comment.
 ### Basic
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v2
+- uses: azellarhq/pgrubic-action@v3
 ```
 
 ### Specifying a different source directory
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v2
+- uses: azellarhq/pgrubic-action@v3
   with:
     src: "./src"
 ```
@@ -62,7 +65,7 @@ in which case the action cannot publish a comment.
 ### Specifying multiple files
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v2
+- uses: azellarhq/pgrubic-action@v3
   with:
     src: |
       path/to/file1.sql
@@ -72,7 +75,7 @@ in which case the action cannot publish a comment.
 ### Specifying multiple directories
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v2
+- uses: azellarhq/pgrubic-action@v3
   with:
     src: |
       path/to/dir1
@@ -82,7 +85,7 @@ in which case the action cannot publish a comment.
 ### Specifying multiple files and directories
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v2
+- uses: azellarhq/pgrubic-action@v3
   with:
     src: |
       path/to/file1.sql
@@ -96,7 +99,7 @@ in which case the action cannot publish a comment.
 This action adds **pgrubic** to the PATH, so you can use it in subsequent steps.
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v2
+- uses: azellarhq/pgrubic-action@v3
 - run: pgrubic lint
 - run: pgrubic format
 ```
@@ -106,7 +109,7 @@ you can use the `args` input to overwrite the default option (`lint`):
 
 ```yaml
 - name: Install pgrubic without running lint or format
-  uses: azellarhq/pgrubic-action@v2
+  uses: azellarhq/pgrubic-action@v3
   with:
     args: "--version"
 ```
@@ -114,7 +117,7 @@ you can use the `args` input to overwrite the default option (`lint`):
 ### Use `pgrubic format`
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v2
+- uses: azellarhq/pgrubic-action@v3
   with:
     args: "format --check --diff"
 ```
@@ -122,7 +125,7 @@ you can use the `args` input to overwrite the default option (`lint`):
 ### Install a specific version of pgrubic
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v2
+- uses: azellarhq/pgrubic-action@v3
   with:
     pgrubic-version: "2.0.0"
 ```
@@ -130,7 +133,7 @@ you can use the `args` input to overwrite the default option (`lint`):
 ### Install the latest version of pgrubic
 
 ```yaml
-- uses: azellarhq/pgrubic-action@v2
+- uses: azellarhq/pgrubic-action@v3
   with:
     pgrubic-version: "latest"
 ```

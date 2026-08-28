@@ -79,24 +79,39 @@ runs:
       shell: bash
 
     - name: Find Comment
-      if: github.event_name == 'pull_request' && steps.lint-report.outputs.exists == 'true'
+      if: >-
+        github.event_name == 'pull_request' &&
+        steps.lint-report.outputs.exists == 'true' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.actor != 'dependabot[bot]'
       uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad  # v4
       id: fc
       with:
         issue-number: ${{ github.event.pull_request.number }}
         comment-author: "github-actions[bot]"
         body-includes: "Pgrubic Lint Report"
-      continue-on-error: true
 
     - name: Create or update comment
-      if: github.event_name == 'pull_request' && steps.lint-report.outputs.exists == 'true'
+      if: >-
+        github.event_name == 'pull_request' &&
+        steps.lint-report.outputs.exists == 'true' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.actor != 'dependabot[bot]'
       uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9  # v5
       with:
         comment-id: ${{ steps.fc.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body-path: "pgrubic-lint-report.md"
         edit-mode: replace
-      continue-on-error: true
+
+    - name: Warn when pull request commenting is unavailable
+      if: >-
+        github.event_name == 'pull_request' &&
+        steps.lint-report.outputs.exists == 'true' &&
+        (github.event.pull_request.head.repo.full_name != github.repository ||
+        github.actor == 'dependabot[bot]')
+      run: echo "::warning::Skipping the lint report comment because this pull request has a read-only GITHUB_TOKEN."
+      shell: bash
 
     - name: Exit pipeline on pgrubic failure
       if: steps.run-pgrubic.outcome == 'failure'
