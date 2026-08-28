@@ -8,25 +8,32 @@
 
 A GitHub Action to run [**pgrubic**](https://bolajiwahab.github.io/pgrubic), a PostgreSQL linter and formatter for schema migrations and design best practices.
 
-This action runs `pgrubic lint --generate-lint-report` by default, but it can do
-anything `pgrubic` can.
+This action runs `pgrubic lint` by default, but it can do anything `pgrubic` can.
 
 ## Commenting on pull requests
 
-This action, by default, comments with lint reports on pull requests on `pull_request` events and therefore requires the necessary permissions for publishing new comments in pull requests.
+To publish lint reports as pull request comments, generate a lint report and grant
+the action permission to write to pull requests:
 
 ```yaml
 permissions:
-  # Gives the action the necessary permissions for publishing new
-  # comments in pull requests.
+  contents: read
   pull-requests: write
+
+steps:
+  - uses: azellarhq/pgrubic-action@v2
+    with:
+      args: "lint --generate-lint-report"
 ```
+
+Pull requests from forks and Dependabot may receive a read-only `GITHUB_TOKEN`,
+in which case the action cannot publish a comment.
 
 ## Inputs
 
 | Input             | Description                                                                                                            | Default            |
 |-------------------|------------------------------------------------------------------------------------------------------------------------|--------------------|
-| `args`            | The arguments to pass to the **pgrubic** command. See [Running pgrubic](https://bolajiwahab.github.io/pgrubic/cli).    | `lint --generate-lint-report`             |
+| `args`            | The arguments to pass to the **pgrubic** command. See [Running pgrubic](https://bolajiwahab.github.io/pgrubic/cli).    | `lint`             |
 | `pgrubic-version` | The version of **pgrubic** to use, e.g., `0.9.0`.                                                                      | `latest`           |
 | `src`             | The directory or files to run **pgrubic** on.                                                                          | [github.workspace](https://docs.github.com/en/actions/reference/contexts-reference#github-context:~:text=the%20workflow%20file.-,github.workspace,-string)                                 |
 

@@ -12,20 +12,46 @@ on:  # yamllint disable-line rule:truthy
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
-  pgrubic_action:
+  default:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          fetch-depth: 0
 
-      - name: Self test action
-        id: action
+      - name: Test default
         uses: ./
         with:
           src: "tests/sql"
 
-      - name: Output installed pgrubic version
-        run: echo ${{ steps.action.outputs.installed-pgrubic-version }}
+  commands:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - command: lint
+            args: "lint"
+          - command: lint-report
+            args: "lint --generate-lint-report"
+          - command: format
+            args: "format"
+          - command: format-check
+            args: "format --check"
+          - command: format-diff
+            args: "format --diff"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+
+      - name: Test ${{ matrix.command }}
+        uses: ./
+        with:
+          args: ${{ matrix.args }}
+          src: "tests/sql"

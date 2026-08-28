@@ -9,7 +9,7 @@ inputs:
   args:
     description: "Arguments passed to pgrubic. Use `pgrubic --help` to see available options. Defaults to `lint`."
     required: false
-    default: "lint --generate-lint-report"
+    default: "lint"
   src:
     description: "Source to run pgrubic on. Defaults to the current directory."
     required: false
@@ -27,7 +27,7 @@ runs:
   using: composite
   steps:
     - name: Set up Python
-      uses: actions/setup-python@v7
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
       with:
         python-version: "3.12"
 
@@ -57,15 +57,6 @@ runs:
       shell: bash
       continue-on-error: true
 
-    - name: Find Comment
-      if: github.event_name == 'pull_request'
-      uses: peter-evans/find-comment@v4
-      id: fc
-      with:
-        issue-number: ${{ github.event.pull_request.number }}
-        comment-author: "github-actions[bot]"
-        body-includes: "Pgrubic Lint Report"
-
     - name: Check if lint report exists
       id: lint-report
       run: |
@@ -76,9 +67,18 @@ runs:
         fi
       shell: bash
 
+    - name: Find Comment
+      if: github.event_name == 'pull_request' && steps.lint-report.outputs.exists == 'true'
+      uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad  # v4
+      id: fc
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: "github-actions[bot]"
+        body-includes: "Pgrubic Lint Report"
+
     - name: Create or update comment
       if: github.event_name == 'pull_request' && steps.lint-report.outputs.exists == 'true'
-      uses: peter-evans/create-or-update-comment@v5
+      uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9  # v5
       with:
         comment-id: ${{ steps.fc.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
