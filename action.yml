@@ -9,9 +9,9 @@ inputs:
   args:
     description: "Arguments passed to pgrubic. Use `pgrubic --help` to see available options. Defaults to `lint`."
     required: false
-    default: "lint --generate-lint-report"
+    default: "lint"
   src:
-    description: "Source to run pgrubic on. Defaults to the current directory."
+    description: "Sources to run pgrubic on, one path per line. Defaults to the current directory."
     required: false
     default: ${{ github.workspace }}
   pgrubic-version:
@@ -27,20 +27,20 @@ runs:
   using: composite
   steps:
     - name: Set up Python
-      uses: actions/setup-python@v7
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
       with:
         python-version: "3.12"
 
-    - name: Install pgrubic {{ inputs.pgrubic-version }}
+    - name: Install pgrubic ${{ inputs.pgrubic-version }}
       if: ${{ inputs.pgrubic-version == 'latest' }}
-      run: pip install --upgrade pip pgrubic
+      run: python -m pip install --upgrade pip pgrubic
       shell: bash
 
-    - name: Install pgrubic {{ inputs.pgrubic-version }}
+    - name: Install pgrubic ${{ inputs.pgrubic-version }}
       if: ${{ inputs.pgrubic-version != 'latest' }}
       env:
         PGRUBIC_VERSION: ${{ inputs.pgrubic-version }}
-      run: pip install --upgrade pip pgrubic==$PGRUBIC_VERSION
+      run: python -m pip install --upgrade pip "pgrubic==$PGRUBIC_VERSION"
       shell: bash
 
     - name: Output installed pgrubic version
@@ -48,25 +48,27 @@ runs:
       run: echo "installed-pgrubic-version=$(pgrubic --version)" >> $GITHUB_OUTPUT
       shell: bash
 
+    - name: Remove stale lint report
+      if: contains(inputs.args, '--generate-lint-report')
+      run: rm -f -- pgrubic-lint-report.md
+      shell: bash
+
     - name: Run pgrubic
       id: run-pgrubic
       env:
         PGRUBIC_ARGS: ${{ inputs.args }}
         PGRUBIC_SRC: ${{ inputs.src }}
-      run: pgrubic $PGRUBIC_ARGS $PGRUBIC_SRC
+      run: |
+        pgrubic_sources=()
+        while IFS= read -r source; do
+          [ -n "$source" ] && pgrubic_sources+=("$source")
+        done <<< "$PGRUBIC_SRC"
+        pgrubic $PGRUBIC_ARGS "${pgrubic_sources[@]}"
       shell: bash
       continue-on-error: true
 
-    - name: Find Comment
-      if: github.event_name == 'pull_request'
-      uses: peter-evans/find-comment@v4
-      id: fc
-      with:
-        issue-number: ${{ github.event.pull_request.number }}
-        comment-author: "github-actions[bot]"
-        body-includes: "Pgrubic Lint Report"
-
     - name: Check if lint report exists
+      if: contains(inputs.args, '--generate-lint-report')
       id: lint-report
       run: |
         if [ -f pgrubic-lint-report.md ]; then
@@ -76,14 +78,40 @@ runs:
         fi
       shell: bash
 
+    - name: Find Comment
+      if: >-
+        github.event_name == 'pull_request' &&
+        steps.lint-report.outputs.exists == 'true' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.actor != 'dependabot[bot]'
+      uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad  # v4
+      id: fc
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: "github-actions[bot]"
+        body-includes: "Pgrubic Lint Report"
+
     - name: Create or update comment
-      if: github.event_name == 'pull_request' && steps.lint-report.outputs.exists == 'true'
-      uses: peter-evans/create-or-update-comment@v5
+      if: >-
+        github.event_name == 'pull_request' &&
+        steps.lint-report.outputs.exists == 'true' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.actor != 'dependabot[bot]'
+      uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9  # v5
       with:
         comment-id: ${{ steps.fc.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body-path: "pgrubic-lint-report.md"
         edit-mode: replace
+
+    - name: Warn when pull request commenting is unavailable
+      if: >-
+        github.event_name == 'pull_request' &&
+        steps.lint-report.outputs.exists == 'true' &&
+        (github.event.pull_request.head.repo.full_name != github.repository ||
+        github.actor == 'dependabot[bot]')
+      run: echo "::warning::Skipping the lint report comment because this pull request has a read-only GITHUB_TOKEN."
+      shell: bash
 
     - name: Exit pipeline on pgrubic failure
       if: steps.run-pgrubic.outcome == 'failure'
