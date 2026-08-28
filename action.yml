@@ -33,19 +33,24 @@ runs:
 
     - name: Install pgrubic ${{ inputs.pgrubic-version }}
       if: ${{ inputs.pgrubic-version == 'latest' }}
-      run: pip install --upgrade pip pgrubic
+      run: python -m pip install --upgrade pip pgrubic
       shell: bash
 
     - name: Install pgrubic ${{ inputs.pgrubic-version }}
       if: ${{ inputs.pgrubic-version != 'latest' }}
       env:
         PGRUBIC_VERSION: ${{ inputs.pgrubic-version }}
-      run: pip install --upgrade pip pgrubic==$PGRUBIC_VERSION
+      run: python -m pip install --upgrade pip "pgrubic==$PGRUBIC_VERSION"
       shell: bash
 
     - name: Output installed pgrubic version
       id: installed-pgrubic-version
       run: echo "installed-pgrubic-version=$(pgrubic --version)" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Remove stale lint report
+      if: contains(inputs.args, '--generate-lint-report')
+      run: rm -f -- pgrubic-lint-report.md
       shell: bash
 
     - name: Run pgrubic
@@ -58,6 +63,7 @@ runs:
       continue-on-error: true
 
     - name: Check if lint report exists
+      if: contains(inputs.args, '--generate-lint-report')
       id: lint-report
       run: |
         if [ -f pgrubic-lint-report.md ]; then
@@ -75,6 +81,7 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         comment-author: "github-actions[bot]"
         body-includes: "Pgrubic Lint Report"
+      continue-on-error: true
 
     - name: Create or update comment
       if: github.event_name == 'pull_request' && steps.lint-report.outputs.exists == 'true'
@@ -84,6 +91,7 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         body-path: "pgrubic-lint-report.md"
         edit-mode: replace
+      continue-on-error: true
 
     - name: Exit pipeline on pgrubic failure
       if: steps.run-pgrubic.outcome == 'failure'

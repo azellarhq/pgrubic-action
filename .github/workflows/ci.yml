@@ -38,14 +38,22 @@ jobs:
         include:
           - command: lint
             args: "lint"
+            pgrubic-version: "latest"
           - command: lint-report
             args: "lint --generate-lint-report"
+            pgrubic-version: "latest"
+          - command: lint-explicit-version
+            args: "lint"
+            pgrubic-version: "2.0.0"
           - command: format
             args: "format"
+            pgrubic-version: "latest"
           - command: format-check
             args: "format --check"
+            pgrubic-version: "latest"
           - command: format-diff
             args: "format --diff"
+            pgrubic-version: "latest"
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
@@ -56,4 +64,8 @@ jobs:
         uses: ./
         with:
           args: ${{ matrix.args }}
-          src: "tests/sql"
+          pgrubic-version: ${{ matrix.pgrubic-version }}
+          src: |
+            tests/sql/V001__init.sql
+            tests/sql/V003__file with spaces.sql
+            tests/sql with spaces
