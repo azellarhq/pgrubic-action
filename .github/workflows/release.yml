@@ -18,28 +18,41 @@ jobs:
       new_version: ${{ steps.release.outputs.new_version }}
       suffix: ${{ steps.release.outputs.suffix }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      previous_tag: ${{ steps.release.outputs.previous_tag }}
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
         with:
           fetch-tags: true
 
-      - name: Extract tag details
+      - name: Extract tag and Details
         id: release
         run: |
           if [ "${{ github.ref_type }}" = "tag" ]; then
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          NEW_VERSION=$(echo $TAG_NAME | awk -F'-' '{print $1}')
-          SUFFIX=$(echo $TAG_NAME | grep -oP '[a-z]+[0-9]+' || echo "")
-          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
-          echo "suffix=$SUFFIX" >> "$GITHUB_OUTPUT"
-          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
-          echo "Version is $NEW_VERSION"
-          echo "Suffix is $SUFFIX"
-          echo "Tag name is $TAG_NAME"
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            NEW_VERSION=$(echo $TAG_NAME | awk -F'-' '{print $1}')
+            SUFFIX=$(echo $TAG_NAME | grep -oP '[a-z]+[0-9]+' || echo "")
+            # git's version sort does not know our compact prerelease suffixes
+            # (a1, b1, rc1 with no separator) are prereleases, so by default it
+            # sorts e.g. 2.0.0rc1 above 2.0.0.
+            git config versionsort.suffix "a"
+            git config --add versionsort.suffix "b"
+            git config --add versionsort.suffix "rc"
+            PREVIOUS_TAG=$(git tag --sort=-v:refname | grep -F -x -A1 "$TAG_NAME" | tail -n 1)
+            if [ "$PREVIOUS_TAG" = "$TAG_NAME" ]; then
+              PREVIOUS_TAG=""
+            fi
+            echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+            echo "suffix=$SUFFIX" >> "$GITHUB_OUTPUT"
+            echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+            echo "previous_tag=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
+            echo "Version is $NEW_VERSION"
+            echo "Suffix is $SUFFIX"
+            echo "Tag name is $TAG_NAME"
+            echo "Previous tag is $PREVIOUS_TAG"
           else
-          echo "No tag found"
-          exit 1
+            echo "No tag found"
+            exit 1
           fi
 
   github_release:
@@ -49,12 +62,20 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Create GitHub Release
         id: create_release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.details.outputs.tag_name }}
+          PREVIOUS_TAG: ${{ needs.details.outputs.previous_tag }}
         run: |
-          gh release create ${{ needs.details.outputs.tag_name }} --title ${{ needs.details.outputs.tag_name }} --generate-notes
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "Generating notes from $PREVIOUS_TAG to $TAG_NAME"
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --generate-notes --notes-start-tag "$PREVIOUS_TAG"
+          else
+            echo "No previous tag found, generating notes from the beginning of history"
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --generate-notes
+          fi
