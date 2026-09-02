@@ -25,7 +25,7 @@ jobs:
         with:
           fetch-tags: true
 
-      - name: Extract tag and Details
+      - name: Extract tag details
         id: release
         run: |
           if [ "${{ github.ref_type }}" = "tag" ]; then
