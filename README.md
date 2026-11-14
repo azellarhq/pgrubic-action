@@ -37,7 +37,7 @@ whose workflows receive a read-only `GITHUB_TOKEN` by default.
 | Input             | Description                                                                                                            | Default            |
 |-------------------|------------------------------------------------------------------------------------------------------------------------|--------------------|
 | `args`            | The arguments to pass to **pgrubic**. See [Running pgrubic](https://pgrubic.azellar.com/cli).| `lint`             |
-| `pgrubic-version` | The version of **pgrubic** to use, e.g., `2.0.0`.                                                                      | `latest`           |
+| `pgrubic-version` | The version of **pgrubic** to use, e.g., `4.1.1`.                                                                      | `latest`           |
 | `src`             | The directories or files to run **pgrubic** on, one path per line.                                                      | [github.workspace](https://docs.github.com/en/actions/reference/contexts-reference#github-context:~:text=the%20workflow%20file.-,github.workspace,-string)                                 |
 
 ## Outputs
@@ -127,7 +127,7 @@ you can use the `args` input to overwrite the default option (`lint`):
 ```yaml
 - uses: azellarhq/pgrubic-action@v3
   with:
-    pgrubic-version: "2.0.0"
+    pgrubic-version: "4.1.1"
 ```
 
 ### Install the latest version of pgrubic
