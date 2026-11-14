@@ -42,7 +42,7 @@ jobs:
             pgrubic-version: "latest"
           - command: lint-explicit-version
             args: "lint"
-            pgrubic-version: "2.0.0"
+            pgrubic-version: "4.1.1"
           - command: format
             args: "format"
             pgrubic-version: "latest"
